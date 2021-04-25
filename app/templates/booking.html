@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <main class="container mt-3">
+    <div class="row mt-5">
+      <div class="col-10 col-md-6 offset-1 offset-md-3 mb-3">
+        <form action="{{ url_for('booking', id=teacher.id, day=day, time=time)}}" method="POST" class="card mb-3">
+          <div class="card-body text-center pt-5">
+            <img src="{{ teacher.picture }}" class="mb-3" width="95" alt="">
+            <h2 class="h5 card-title mt-2 mb-2">{{ teacher.name }}</h2>
+            <p class="my-1">Запись на пробный урок</p>
+            {% set days={"mon":"Понедельник", "tue":"Вторник", "wed":"Среда", "thu":"Четверг", "fri":"Пятница", "sat":"Суббота", "sun":"Воскресенье"} %}
+            <p class="my-1">{{ days[day]}}, {{time}}:00</p>
+          </div>
+          <hr />
+          <div class="card-body mx-3">
+              <div class="row">
+                  <input class="form-control" type="hidden" name="clientWeekday" value="mon">
+                  <input class="form-control" type="hidden" name="clientTime" value="12:00">
+                  <input class="form-control" type="hidden" name="clientTeacher" value="10">
+              </div>
+
+            {{ form.name.label(class="mb-1 mt-2") }}
+            {{ form.name(class="form-control", type="text") }}
+
+            {{ form.phone.label(class="mb-1 mt-2") }}
+            {{ form.phone(class="form-control", type="tel") }}
+
+            {{ form.submit(class="btn btn-primary btn-block mt-4") }}
+            {{ form.hidden_tag() }}
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+{% endblock %}
