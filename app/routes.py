@@ -1,4 +1,5 @@
 from flask import render_template, request, redirect, url_for
+from sqlalchemy.orm.attributes import flag_modified
 import os
 import json
 import random
@@ -6,12 +7,7 @@ import random
 from app import app, db
 from app.data import goals, teachers
 from app.forms import AllTeachers, MyRequest, Booking
-from app.models import Goal, Teacher, Request
-
-def read_teachers_from_file(file):
-    with open(os.path.join(os.getcwd(), file), "r") as json_file:
-        teachers = json.load(json_file)
-    return teachers
+from app.models import Goal, Teacher, Request, Student
 
 @app.route('/', methods=["GET"])
 def index():
@@ -37,33 +33,16 @@ def profile(id):
 @app.route('/booking/<int:id>/<string:day>/<int:time>/', methods=["GET", "POST"])
 def booking(id, day, time):
     form = Booking(request.form)
-    teacher = db.session.query(Teacher).filter(Teacher.id==id).first()
     if request.method == "POST" and form.validate_on_submit():
-        with open("booking.json", "r") as json_file:
-            data_from_json_file = json_file.read()
-            if data_from_json_file != '':
-                content = json.loads(data_from_json_file)
-            else:
-                content = []
-        data_from_form = {"name": form.name.data, "phone number": form.phone.data, "day": day, "time": time}
-        content.append(data_from_form)
-        with open("booking.json", "w") as json_file:
-            json.dump(content, json_file, indent=4, ensure_ascii=False)
+        teacher = Teacher.query.filter_by(id=id).first()
+        teacher.free[day][f'{time}:00'] = False
+        flag_modified(teacher, "free")
+        student = Student(name=form.name.data, phone=form.phone.data, time=f'{time}:00', day=day, teacher=teacher)
+        db.session.add(student)
+        db.session.commit()
         return render_template('booking_done.html', day=day, time=time, name=form.name.data, phone=form.phone.data)
-
+    teacher = db.session.query(Teacher).filter(Teacher.id==id).first()
     return render_template('booking.html', form=form, teacher=teacher, day=day, time=time)
-
-@app.route('/booking_done/', methods=["POST"])
-def booking_done():
-    form = Booking(request.form)
-    teachers = read_teachers_from_file("data.json")
-    if request.method == "POST" and form.validate_on_submit():
-        print('qweqew')
-        for teacher in teachers:
-            if teacher["id"] == id:
-                print('qweqew')
-        return render_template('booking_done.html')
-    return render_template('booking_done.html')
 
 @app.route('/goal/<string:id>')
 def goal(id):
